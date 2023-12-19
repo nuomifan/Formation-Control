@@ -60,7 +60,7 @@ class DeepQNetwork:
         with tf.variable_scope('eval_net'+str(self.id)):
             # c_names(collections_names) are the collections to store variables
             c_names, n_l1,n_l2, w_initializer, b_initializer = \
-                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 20,25, \
+                ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES], 100,100, \
                 tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)  # config of layers
 
             # first layer. collections is used later when assign to target net
