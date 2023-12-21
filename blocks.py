@@ -195,11 +195,11 @@ class Block:
 if __name__ == '__main__':
     # del_file('block map')
     b = Block(radius_max=30, radius_min=20, low=20, high=200)
-    b.recover_block_map()
-    b.plot()
-    print(1)
+    # b.recover_block_map()
+    # b.plot()
+    # print(1)
     # b.save_block_map()
-    # for i in range(20):
-    #     b.generate_centers()
-    #     b.generate_blocks()
-    #     b.save_block_map()
+    for i in range(20):
+        b.generate_centers()
+        b.generate_blocks()
+        b.save_block_map()
