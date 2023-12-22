@@ -6,6 +6,9 @@ from util import del_file
 
 class Triangle:
     def __init__(self, center, radius_max, radius_min):
+        self.type = 'triangle'
+
+        # 三角形顶点
         r1 = radius_min + (radius_max - radius_min) * np.random.rand()
         theta1 = np.random.rand() * 2 / 3 * np.pi
         r2 = radius_min + (radius_max - radius_min) * np.random.rand()
@@ -16,6 +19,7 @@ class Triangle:
                                 [center[0] + r2 * np.cos(theta2), center[1] + r2 * np.sin(theta2)],
                                 [center[0] + r3 * np.cos(theta3), center[1] + r3 * np.sin(theta3)]])
 
+        # 三角形边
         e1 = (self.vertex[1] - self.vertex[0]) / np.linalg.norm(self.vertex[0] - self.vertex[1]) * 0.1
 
         e2 = (self.vertex[2] - self.vertex[1]) / np.linalg.norm(self.vertex[1] - self.vertex[2]) * 0.1
@@ -53,6 +57,8 @@ class Triangle:
 
 class Rectangle:
     def __init__(self, center, radius_max, radius_min, ):
+        self.type = 'rectangle'
+        # 矩形顶点
         r = radius_min + (radius_max - radius_min) * np.random.rand()
         theta1 = np.random.rand() * 2 * np.pi
         theta2 = theta1 + np.random.rand() * np.pi / 2 + np.pi / 4
@@ -63,6 +69,7 @@ class Rectangle:
                                 [center[0] + r * np.cos(theta3), center[1] + r * np.sin(theta3)],
                                 [center[0] + r * np.cos(theta4), center[1] + r * np.sin(theta4)]])
 
+        # 矩形的边
         e1 = (self.vertex[1] - self.vertex[0]) / np.linalg.norm(self.vertex[0] - self.vertex[1]) * 0.1
 
         e2 = (self.vertex[2] - self.vertex[1]) / np.linalg.norm(self.vertex[1] - self.vertex[2]) * 0.1
@@ -110,8 +117,9 @@ class Rectangle:
 
 class Circle:
     def __init__(self, center, radius_max, radius_min, ):
+        self.type = 'circle'
         r = radius_min + (radius_max - radius_min) * np.random.rand()
-
+        self.vertex = np.array([center, r], dtype=object)
         num_nodes = round(2 * np.pi * r / 0.1)
         self.edge = []
         for i in range(num_nodes + 1):
@@ -126,6 +134,7 @@ class Block:
     def __init__(self, radius_max=30, radius_min=20, low=20, high=200):
         self.points = []
         self.blocks_center = []
+        self.block = []
         self.radius_max = radius_max
         self.radius_min = radius_min
         self.low = low
@@ -136,6 +145,7 @@ class Block:
     def generate_centers(self):
         self.points = []
         self.blocks_center = []
+        self.block = []
         # 生成障碍物中心，假设车的大小是10cm，障碍物直径30-50cm左右，
         # 假设实验场地是2X2米的范围，那么就是200cm x 200cm，
         # 尝试10000次随机中心，生成尽可能多的障碍物
@@ -154,17 +164,20 @@ class Block:
         for i in range(len(self.blocks_center)):
             shape = np.random.choice(['triangle', 'rectangle', 'circle'])
             if shape == 'triangle':
-                self.points.append(Triangle(center=self.blocks_center[i],
-                                            radius_max=self.radius_max,
-                                            radius_min=self.radius_min).edge)
+                b = Triangle(center=self.blocks_center[i],
+                             radius_max=self.radius_max,
+                             radius_min=self.radius_min)
             if shape == 'rectangle':
-                self.points.append(Rectangle(center=self.blocks_center[i],
-                                             radius_max=self.radius_max,
-                                             radius_min=self.radius_min).edge)
+                b = Rectangle(center=self.blocks_center[i],
+                              radius_max=self.radius_max,
+                              radius_min=self.radius_min)
             if shape == 'circle':
-                self.points.append(Circle(center=self.blocks_center[i],
-                                          radius_max=self.radius_max,
-                                          radius_min=self.radius_min).edge)
+                b = Circle(center=self.blocks_center[i],
+                           radius_max=self.radius_max,
+                           radius_min=self.radius_min)
+
+            self.points.append(b.edge)
+            self.block.append({"shape": b.type, "vertex": b.vertex})
 
     def save_block_map(self):
         fold_num = len(os.listdir("block map"))
@@ -189,7 +202,7 @@ class Block:
         self.points = []
         self.blocks_center = np.loadtxt(dir + 'block center.txt')
         for i in range(len(self.blocks_center)):
-            self.points.append(np.loadtxt(dir + 'block_%d.txt'%i))
+            self.points.append(np.loadtxt(dir + 'block_%d.txt' % i))
 
 
 if __name__ == '__main__':
