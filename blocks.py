@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from util import del_file
+import re
 
 
 class Triangle:
@@ -119,7 +120,7 @@ class Circle:
     def __init__(self, center, radius_max, radius_min, ):
         self.type = 'circle'
         r = radius_min + (radius_max - radius_min) * np.random.rand()
-        self.vertex = np.array([center, r], dtype=object)
+        self.vertex = np.array([center[0], center[1], r], dtype=object)
         num_nodes = round(2 * np.pi * r / 0.1)
         self.edge = []
         for i in range(num_nodes + 1):
@@ -185,10 +186,26 @@ class Block:
         os.mkdir(path)
         np.savetxt(path + 'block center.txt', self.blocks_center)
         for i in range(len(self.blocks_center)):
-            np.savetxt(path + 'block_%d.txt' % i, self.points[i])
-        plt.clf()
-        for obs in self.points:
-            plt.plot(obs[:, 0], obs[:, 1], c='b')
+            np.savetxt(path + 'points_%d.txt' % i, self.points[i])
+            np.savetxt(path + 'vertex_%d,txt' % i, self.block[i]["vertex"])
+
+        with open(path + 'block.txt', "a") as file:
+            for i in range(len(self.blocks_center)):
+                file.write("{}\n".format(self.block[i]["shape"]))
+
+        fig, ax = plt.subplots()
+        ax.cla()
+        plt.xlim([-30, 250])
+        plt.ylim([-30, 250])
+        plt.axis('equal')
+        for b in self.block:
+            if b["shape"] == 'circle':
+                circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True)
+                ax.add_artist(circle)
+            if b["shape"] == 'rectangle':
+                plt.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+            if b["shape"] == 'triangle':
+                plt.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
         plt.savefig(path + '{}.png'.format(fold_num + 1))
 
     def plot(self):
@@ -200,19 +217,25 @@ class Block:
     def recover_block_map(self, dir='block map/1/'):
         self.blocks_center = []
         self.points = []
+        self.block = []
         self.blocks_center = np.loadtxt(dir + 'block center.txt')
+        with open(dir + 'block.txt', "r") as file:
+            lines = file.readlines()
         for i in range(len(self.blocks_center)):
-            self.points.append(np.loadtxt(dir + 'block_%d.txt' % i))
+            self.points.append(np.loadtxt(dir + 'points_%d.txt' % i))
+            vertex = np.loadtxt(dir + 'vertex_%d,txt' % i)
+            self.block.append({"shape": lines[i][:-1], "vertex": vertex})
+
 
 
 if __name__ == '__main__':
     # del_file('block map')
     b = Block(radius_max=30, radius_min=20, low=20, high=200)
-    # b.recover_block_map()
+    b.recover_block_map()
     # b.plot()
     # print(1)
     # b.save_block_map()
-    for i in range(20):
-        b.generate_centers()
-        b.generate_blocks()
-        b.save_block_map()
+    # for i in range(20):
+    #     b.generate_centers()
+    #     b.generate_blocks()
+    #     b.save_block_map()

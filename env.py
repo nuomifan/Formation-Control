@@ -41,6 +41,8 @@ class Env:
 
         # 是否更新
         self.is_render = is_render
+        # if is_render:
+        #     self.fig, self.ax = plt.subplots()
         # 仿真步数
         self.step_ctr = 0
 
@@ -103,39 +105,42 @@ class Env:
             return False
 
     def render(self):
-        # 画障碍物
         if self.step_ctr <= 1:
             self.fig, self.ax = plt.subplots()
-
+        # 画障碍物
         for b in self.block.block:
             if b["shape"] == 'circle':
-                circle = plt.Circle(b['vertex'][0], b['vertex'][1], fill=True)
+                circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True)
                 self.ax.add_artist(circle)
             if b["shape"] == 'rectangle':
-                plt.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
             if b["shape"] == 'triangle':
-                plt.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
 
         # 画目的地
-        plt.plot(250, 250, marker='*')
+        self.ax.plot(250, 250, marker='*')
 
         # 画智能体
         for pos in self.pos:
-            plt.plot(pos[0], pos[1], marker='o')
+            self.ax.plot(pos[0], pos[1], marker='o')
 
         for i in range(self._num_agent):
             his = np.vstack(self.agent[i].history())
-            plt.plot(his[:, 0], his[:, 1])
+            self.ax.plot(his[:, 0], his[:, 1])
 
-        plt.text(-30, 250, "velocity: [%d, %d]" % (self.vel[0, 0], self.vel[0, 1]), fontsize=8)
-        plt.text(-30, 240, "position: [%d, %d]" % (self.pos[0, 0], self.pos[0, 1]), fontsize=8)
+        self.ax.text(-30, 250, "velocity: [%d, %d]" % (self.vel[0, 0], self.vel[0, 1]), fontsize=8)
+        self.ax.text(-30, 240, "position: [%d, %d]" % (self.pos[0, 0], self.pos[0, 1]), fontsize=8)
 
-        plt.xlim([-30, 250])
-        plt.ylim([-30, 250])
-        plt.axis('equal')
-        plt.pause(.001)
+        # self.ax.xlim([-30, 250])
+        # self.ax.ylim([-30, 250])
+        self.ax.set_xlim(-30, 250)
+        self.ax.set_ylim(-30, 250)
+        self.ax.axis('equal')
 
-        plt.cla()
+        # print(1)
+        # self.fig.show()
+        plt.pause(.1)
+        self.ax.cla()
 
     def show(self):
         pass
@@ -153,7 +158,7 @@ if __name__ == '__main__':
                   [1, 0, 0]])
 
     env = Env(num_leader=1,
-              num_follower=2,
+              num_follower=0,
               formation_shape=formation,
               adjacent_matrix=A,
               is_render=True,
@@ -164,11 +169,9 @@ if __name__ == '__main__':
               MAX_VEL=20,
               sampling_time=0.02)
     for i in range(20):
-        # env.reset()
-        # env.load_block_map('block map/%d/' % (i + 1))
+        env.reset()
+        env.load_block_map('block map/%d/' % (i + 1))
         while True:
             terminated = env.step()
             if terminated:
                 break
-
-
