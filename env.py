@@ -25,8 +25,9 @@ class Env:
         self.low = low
         self.high = high
 
+        # 机器人移动从(-50,-50)到(200,200)
         # 将机器人移动到随机位置
-        self.pos = np.random.uniform(self.low - 20, self.low, (self._num_agent, 2))
+        self.pos = np.random.uniform(self.low - 50, self.low, (self._num_agent, 2))
         self.acc = np.zeros(shape=(self._num_agent, 2))
         self.vel = np.zeros(shape=(self._num_agent, 2))
         # 目标队形
@@ -41,8 +42,6 @@ class Env:
 
         # 是否更新
         self.is_render = is_render
-        # if is_render:
-        #     self.fig, self.ax = plt.subplots()
         # 仿真步数
         self.step_ctr = 0
 
@@ -57,7 +56,7 @@ class Env:
         self.agent = [Agent(init_pos=self.pos[i],
                             init_vel=self.vel[i],
                             init_acc=self.acc[i],
-                            No=i,
+                            id=i,
                             MAX_ACC=self.MAX_ACC,
                             MAX_VEL=self.MAX_VEL,
                             sampling_time=self.sampling_time) for i in range(self._num_agent)]
@@ -69,10 +68,12 @@ class Env:
     def reset(self):
         self.step_ctr = 0
         # 将机器人移动到随机位置
-        # self.pos = np.round(np.random.rand(self._num_agent, 2) * 10 - 5, 1)
-        self.pos = np.random.uniform(self.low, self.low + 20, (self._num_agent, 2))
+        # 机器人移动从(-50,-50)到(200,200)
+        # 将机器人移动到随机位置
+        self.pos = np.random.uniform(self.low - 50, self.low, (self._num_agent, 2))
         self.acc = np.zeros(shape=(self._num_agent, 2))
         self.vel = np.zeros(shape=(self._num_agent, 2))
+
         for i in range(self._num_agent):
             self.agent[i].reset(self.pos[i], self.vel[i], self.acc[i])
         plt.clf()
@@ -107,18 +108,18 @@ class Env:
     def render(self):
         if self.step_ctr <= 1:
             self.fig, self.ax = plt.subplots()
-        # 画障碍物
-        for b in self.block.block:
-            if b["shape"] == 'circle':
-                circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True)
-                self.ax.add_artist(circle)
-            if b["shape"] == 'rectangle':
-                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
-            if b["shape"] == 'triangle':
-                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+            # 画障碍物
+            for b in self.block.block:
+                if b["shape"] == 'circle':
+                    circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True)
+                    self.ax.add_artist(circle)
+                if b["shape"] == 'rectangle':
+                    self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+                if b["shape"] == 'triangle':
+                    self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
 
-        # 画目的地
-        self.ax.plot(250, 250, marker='*')
+            # 画目的地
+            self.ax.plot(250, 250, marker='*')
 
         # 画智能体
         for pos in self.pos:
@@ -133,14 +134,14 @@ class Env:
 
         # self.ax.xlim([-30, 250])
         # self.ax.ylim([-30, 250])
-        self.ax.set_xlim(-30, 250)
-        self.ax.set_ylim(-30, 250)
+        self.ax.set_xlim(-60, 250)
+        self.ax.set_ylim(-60, 250)
         self.ax.axis('equal')
 
         # print(1)
         # self.fig.show()
         plt.pause(.1)
-        self.ax.cla()
+        # self.ax.cla()
 
     def show(self):
         pass
@@ -149,8 +150,8 @@ class Env:
 if __name__ == '__main__':
     # 编队队形
     formation = np.array([[0, 0],
-                          [1, 0],
-                          [0, 1]])
+                          [10, 0],
+                          [0, 10]])
     # 网络拓扑
     # Adjacent matrix
     A = np.array([[0, 1, 0],

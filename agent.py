@@ -2,11 +2,11 @@ import numpy as np
 
 
 class Agent:
-    def __init__(self, init_pos, init_vel, init_acc, No,
+    def __init__(self, init_pos, init_vel, init_acc, id,
                  MAX_ACC=10, MAX_VEL=10, sampling_time=0.02, leader=True):
         self._leader = leader
         # 机器人编号
-        self._No = No
+        self._id = id
 
         # 1x2 matrix
         self._pos = init_pos
@@ -39,9 +39,11 @@ class Agent:
         self._history = []
 
     def control(self, target, obstacles, all_agents):
+        # 带衰减的轨迹跟踪控制信号
+        self._acc = self.track(target=target)
+        # 传统的避障控制信号
         other_agents = np.delete(all_agents, self._No, axis=0)
         obstacles = np.vstack((obstacles, other_agents))
-        self._acc = self.track(target=target)
         self._acc += self.obstacle_avoidance(obstacles)
 
     def obstacle_avoidance(self, obstacles):
@@ -83,14 +85,17 @@ class Agent:
 
     def step(self, target, obstacles, all_agents):
 
-        # 轨迹跟踪+避障
+        # 轨迹跟踪+避障，计算加速度_acc
         self.control(target, obstacles, all_agents)
+        # 质点二阶动力学更新
         self._acc = np.clip(self._acc, -self._MAX_ACC, self._MAX_ACC)
         self._vel = self._vel + self._acc * self._sampling_time
         self._vel = np.clip(self._vel, -self._MAX_VEL, self._MAX_VEL)
         self._pos = self._pos + self._vel * self._sampling_time
+        # 记录轨迹
         self._history.append(self._pos)
 
     @property
     def pos(self):
         return self._pos
+
