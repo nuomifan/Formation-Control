@@ -1,0 +1,9 @@
+circle
+triangle
+triangle
+rectangle
+circle
+circle
+triangle
+rectangle
+circle
