@@ -142,6 +142,7 @@ class Block:
         self.high = high
         self.generate_centers()
         self.generate_blocks()
+        self._block_map_dir = None
 
     def generate_centers(self):
         self.points = []
@@ -215,6 +216,7 @@ class Block:
         plt.pause(.1)
 
     def recover_block_map(self, dir='block map/1/'):
+        self._block_map_dir = dir
         self.blocks_center = []
         self.points = []
         self.block = []
@@ -226,6 +228,8 @@ class Block:
             vertex = np.loadtxt(dir + 'vertex_%d,txt' % i)
             self.block.append({"shape": lines[i][:-1], "vertex": vertex})
 
+    def block_map_dir(self):
+        return self._block_map_dir
 
 
 if __name__ == '__main__':

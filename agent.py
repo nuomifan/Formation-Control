@@ -2,11 +2,13 @@ import numpy as np
 
 
 class Agent:
-    def __init__(self, init_pos, init_vel, init_acc, id,
+    def __init__(self, init_pos, init_vel, init_acc, id, Laplacian,
                  MAX_ACC=10, MAX_VEL=10, sampling_time=0.02, leader=True):
-        self._leader = leader
+        self.is_leader = leader
         # 机器人编号
         self._id = id
+        # Laplacian matrix
+        self._L = Laplacian
 
         # 1x2 matrix
         self._pos = init_pos
@@ -38,13 +40,20 @@ class Agent:
         self._acc = acc
         self._history = []
 
-    def control(self, target, obstacles, all_agents):
+    def control(self, target, obstacles, all_agent_pos):
+        if not self.is_leader:
+            target = self.formation_control(all_agent_pos)
         # 带衰减的轨迹跟踪控制信号
         self._acc = self.track(target=target)
         # 传统的避障控制信号
-        other_agents = np.delete(all_agents, self._No, axis=0)
+        other_agents = np.delete(all_agent_pos, self._id, axis=0)
         obstacles = np.vstack((obstacles, other_agents))
         self._acc += self.obstacle_avoidance(obstacles)
+
+    def formation_control(self, all_agent_pos):
+
+        print(1)
+        return 0
 
     def obstacle_avoidance(self, obstacles):
         # 障碍物点云 obstacles Nx2
@@ -66,8 +75,8 @@ class Agent:
             acc1 = direction * weight
             acc1 = np.average(acc1, axis=0)
             acc1 = acc1 / np.linalg.norm(acc1)
-            if dis.min() < 10:
-                print(dis.min())
+            # if dis.min() < 10:
+            #     print(dis.min())
             acc1 = acc1 * 1 / dis.min() * self._k
             # 扰动项，避免停止
             acc2 = np.random.rand(2) - 0.5
@@ -98,4 +107,3 @@ class Agent:
     @property
     def pos(self):
         return self._pos
-

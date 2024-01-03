@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from blocks import Block
 from agent import Agent
+from util import del_file
 
 
 class Env:
@@ -12,7 +14,7 @@ class Env:
                  is_render=True,
                  low=0,
                  high=200,
-                 MAX_STEP=500,
+                 MAX_STEP=5000,
                  MAX_ACC=10,
                  MAX_VEL=10,
                  sampling_time=0.02):
@@ -53,13 +55,23 @@ class Env:
         self.MAX_VEL = MAX_VEL
         self.sampling_time = sampling_time
         # 生成智能体
-        self.agent = [Agent(init_pos=self.pos[i],
-                            init_vel=self.vel[i],
-                            init_acc=self.acc[i],
-                            id=i,
-                            MAX_ACC=self.MAX_ACC,
-                            MAX_VEL=self.MAX_VEL,
-                            sampling_time=self.sampling_time) for i in range(self._num_agent)]
+        self.leader_agent = [Agent(init_pos=self.pos[i],
+                                   init_vel=self.vel[i],
+                                   init_acc=self.acc[i],
+                                   id=i,
+                                   Laplacian=self.L,
+                                   MAX_ACC=self.MAX_ACC,
+                                   MAX_VEL=self.MAX_VEL,
+                                   sampling_time=self.sampling_time) for i in range(self._num_leader)]
+        self.follower_agent = [Agent(init_pos=self.pos[i],
+                                     init_vel=self.vel[i],
+                                     init_acc=self.acc[i],
+                                     id=i,
+                                     Laplacian=self.L,
+                                     MAX_ACC=self.MAX_ACC,
+                                     MAX_VEL=self.MAX_VEL,
+                                     sampling_time=self.sampling_time) for i in range(self._num_followers)]
+        self.fig, self.ax = plt.subplots()
 
     def load_block_map(self, dir='block map/1/'):
         self.block.recover_block_map(dir)
@@ -76,7 +88,6 @@ class Env:
 
         for i in range(self._num_agent):
             self.agent[i].reset(self.pos[i], self.vel[i], self.acc[i])
-        plt.clf()
 
     def step(self, action=0):
         self.step_ctr += 1
@@ -92,6 +103,8 @@ class Env:
             self.pos[i], self.vel[i], self.acc[i] = self.agent[i].state()
 
         # 超出时长
+        if self.step_ctr >= self.MAX_STEP:
+            return True
 
         # 超出通信范围
 
@@ -106,20 +119,20 @@ class Env:
             return False
 
     def render(self):
-        if self.step_ctr <= 1:
-            self.fig, self.ax = plt.subplots()
-            # 画障碍物
-            for b in self.block.block:
-                if b["shape"] == 'circle':
-                    circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True)
-                    self.ax.add_artist(circle)
-                if b["shape"] == 'rectangle':
-                    self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
-                if b["shape"] == 'triangle':
-                    self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True)
+        # if self.step_ctr <= 1:
+        # self.fig, self.ax = plt.subplots()
+        # 画障碍物
+        for b in self.block.block:
+            if b["shape"] == 'circle':
+                circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True, color="blue")
+                self.ax.add_artist(circle)
+            if b["shape"] == 'rectangle':
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True, color='blue')
+            if b["shape"] == 'triangle':
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True, color='blue')
 
-            # 画目的地
-            self.ax.plot(250, 250, marker='*')
+        # 画目的地
+        self.ax.plot(250, 250, marker='*')
 
         # 画智能体
         for pos in self.pos:
@@ -127,27 +140,51 @@ class Env:
 
         for i in range(self._num_agent):
             his = np.vstack(self.agent[i].history())
-            self.ax.plot(his[:, 0], his[:, 1])
+            self.ax.plot(his[:, 0], his[:, 1], color='red')
 
-        self.ax.text(-30, 250, "velocity: [%d, %d]" % (self.vel[0, 0], self.vel[0, 1]), fontsize=8)
-        self.ax.text(-30, 240, "position: [%d, %d]" % (self.pos[0, 0], self.pos[0, 1]), fontsize=8)
+        self.ax.text(-30, 250, "velocity: [%d, %d]" % (self.vel[0, 0], self.vel[0, 1]), fontsize=6)
+        self.ax.text(-30, 240, "position: [%d, %d]" % (self.pos[0, 0], self.pos[0, 1]), fontsize=6)
 
-        # self.ax.xlim([-30, 250])
-        # self.ax.ylim([-30, 250])
-        self.ax.set_xlim(-60, 250)
-        self.ax.set_ylim(-60, 250)
-        self.ax.axis('equal')
+        self.ax.set_xlim(-60, 300)
+        self.ax.set_ylim(-60, 300)
 
-        # print(1)
-        # self.fig.show()
         plt.pause(.1)
-        # self.ax.cla()
+        self.ax.cla()
 
-    def show(self):
-        pass
+    def store_transition(self):
+        if not os.path.exists("history"):
+            os.mkdir("history")
+        fold_num = len(os.listdir("history"))
+        path = 'history/%d/' % (fold_num + 1)
+        os.mkdir(path)
+        # 画障碍物
+        for b in self.block.block:
+            if b["shape"] == 'circle':
+                circle = plt.Circle((b['vertex'][0], b['vertex'][1]), b['vertex'][2], fill=True, color="blue")
+                self.ax.add_artist(circle)
+            if b["shape"] == 'rectangle':
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True, color='blue')
+            if b["shape"] == 'triangle':
+                self.ax.fill(b['vertex'][:, 0], b['vertex'][:, 1], fill=True, color='blue')
+
+        # 画目的地
+        self.ax.plot(250, 250, marker='*')
+
+        for i in range(self._num_agent):
+            his = np.vstack(self.agent[i].history())
+            # 画起始点
+            self.ax.plot(his[0, 0], his[0, 1], marker='o')
+            # 画轨迹
+            self.ax.plot(his[:, 0], his[:, 1], color='red')
+
+        self.ax.set_xlim(-60, 300)
+        self.ax.set_ylim(-60, 300)
+        plt.savefig(path + 'track.png')
+        self.ax.cla()
 
 
 if __name__ == '__main__':
+    del_file('history')
     # 编队队形
     formation = np.array([[0, 0],
                           [10, 0],
@@ -159,10 +196,10 @@ if __name__ == '__main__':
                   [1, 0, 0]])
 
     env = Env(num_leader=1,
-              num_follower=0,
+              num_follower=2,
               formation_shape=formation,
               adjacent_matrix=A,
-              is_render=True,
+              is_render=False,
               low=0,
               high=200,
               MAX_STEP=500,
@@ -175,4 +212,5 @@ if __name__ == '__main__':
         while True:
             terminated = env.step()
             if terminated:
+                env.store_transition()
                 break
